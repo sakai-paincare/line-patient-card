@@ -490,11 +490,20 @@ liff.init({ liffId: LIFF_ID })
 // ============================================================
 // フォームバリデーション
 // ============================================================
+// ひらがな → カタカナ変換
+function toKatakana(str) {
+  return str.replace(/[\u3041-\u3096]/g, ch =>
+    String.fromCharCode(ch.charCodeAt(0) + 0x60)
+  );
+}
+
 function validateForm() {
   let valid = true;
 
-  // カタカナ氏名
-  const name = document.getElementById('name').value.trim();
+  // カタカナ氏名（ひらがなも自動変換）
+  let name = document.getElementById('name').value.trim();
+  name = toKatakana(name).replace(/[\s　]/g, ''); // ひらがな変換＋スペース除去
+  document.getElementById('name').value = name;
   const nameError = document.getElementById('nameError');
   const nameInput = document.getElementById('name');
   const katakanaRegex = /^[ァ-ヶー\s　]+$/;
