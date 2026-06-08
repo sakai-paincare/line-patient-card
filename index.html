@@ -553,28 +553,52 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
   document.getElementById('submitBtn').disabled = true;
 
   try {
-    if (liffInitialized && liff.isInClient()) {
-      // ── LINEアプリ内で開いている場合 ──
-      // liff.sendMessagesでGAS Webhookへ（LINEを通じて送信）
-      await liff.sendMessages([
-        {
-          type: 'text',
-          text: payload
-        }
-      ]);
-      showLoading(false);
-      showSuccess();
-
-    } else {
-      // ── 開発テスト用：GASに直接POST ──
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'liff_register', payload })
-      });
-      showLoading(false);
-      showSuccess();
+    // LINE User IDを取得
+    let userId = '';
+    if (liffInitialized && liff.isLoggedIn()) {
+      const profile = await liff.getProfile();
+      userId = profile.userId;
     }
+
+    if (!userId) {
+      showLoading(false);
+      showError('LINEのログイン情報が取得できませんでした。LINEアプリから開き直してください。');
+      document.getElementById('submitBtn').disabled = false;
+      return;
+    }
+
+    // GASに直接POST
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'registerFromLiff',
+        userId,
+        name,
+        birthYear
+      })
+    });
+
+    const result = await res.json();
+    showLoading(false);
+
+    if (result.success) {
+      showSuccess();
+      setTimeout(() => {
+        if (liffInitialized && liff.isInClient()) {
+          liff.closeWindow();
+        }
+      }, 3000);
+    } else if (result.notFound) {
+      showError('カタカナのお名前・生まれた年をご確認の上、再度お試しください。\n\n解決しない場合は受付にお声がけください。');
+      document.getElementById('submitBtn').disabled = false;
+    } else if (result.alreadyLinked) {
+      showError('既に登録済みです。\nLINEのメニューから「診察券を表示」をタップしてください。');
+    } else {
+      showError('送信中にエラーが発生しました。もう一度お試しください。');
+      document.getElementById('submitBtn').disabled = false;
+    }
+
   } catch (err) {
     console.error('送信エラー:', err);
     showLoading(false);
