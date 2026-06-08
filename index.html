@@ -563,26 +563,25 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
 
   try {
     // LINE User IDを取得
-    let userId = '';
+    let accessToken = '';
     if (liffInitialized && liff.isLoggedIn()) {
-      const profile = await liff.getProfile();
-      userId = profile.userId;
+      accessToken = liff.getAccessToken();
     }
 
-    if (!userId) {
+    if (!accessToken) {
       showLoading(false);
       showError('LINEのログイン情報が取得できませんでした。LINEアプリから開き直してください。');
       document.getElementById('submitBtn').disabled = false;
       return;
     }
 
-    // GASに直接POST
+    // Cloudflare Workersにアクセストークンと登録データを送信
     const res = await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'registerFromLiff',
-        userId,
+        accessToken,
         name,
         birthYear
       })
