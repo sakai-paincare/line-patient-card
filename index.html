@@ -566,6 +566,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     let accessToken = '';
     if (liffInitialized && liff.isLoggedIn()) {
       accessToken = liff.getAccessToken();
+      alert('token: ' + (accessToken ? '取得OK length=' + accessToken.length : 'なし'));
     }
 
     if (!accessToken) {
