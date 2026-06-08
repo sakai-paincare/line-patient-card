@@ -593,7 +593,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
       }, 3000);
     } catch (err) {
       showLoading(false);
-      showError('エラー: ' + err.message);
+      alert('sendMessages エラー: ' + err.message + ' code:' + (err.code || 'none'));
       document.getElementById('submitBtn').disabled = false;
     }
 });
