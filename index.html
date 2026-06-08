@@ -566,59 +566,36 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
 
   try {
     // LINE User IDを取得
-    let userId = '';
-    if (liffInitialized && liff.isLoggedIn()) {
-      const profile = await liff.getProfile();
-      userId = profile.userId;
-      alert('userId: ' + (userId ? '取得OK' : 'なし'));
-    }
-
-    if (!userId) {
+    if (!liffInitialized || !liff.isLoggedIn()) {
       showLoading(false);
-      showError('LINEのログイン情報が取得できませんでした。LINEアプリから開き直してください。');
+      showError('LINEアプリから開き直してください。');
       document.getElementById('submitBtn').disabled = false;
       return;
     }
 
-    // GASに直接POST
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'registerFromLiff',
-        userId,
-        name,
-        birthYear
-      })
-    });
-
-    const result = await res.json();
-    alert('result: ' + JSON.stringify(result));
-    showLoading(false);
-
-    if (result.success) {
+    // liff.sendMessages()でLINEトークにJSONを送信
+    // → LINEがCloudflare Webhookに転送して処理
+    try {
+      await liff.sendMessages([
+        {
+          type: 'text',
+          text: JSON.stringify({
+            action: 'register',
+            name,
+            birthYear
+          })
+        }
+      ]);
+      showLoading(false);
       showSuccess();
       setTimeout(() => {
-        if (liffInitialized && liff.isInClient()) {
-          liff.closeWindow();
-        }
+        if (liff.isInClient()) liff.closeWindow();
       }, 3000);
-    } else if (result.notFound) {
-      showError('カタカナのお名前・生まれた年をご確認の上、再度お試しください。\n\n解決しない場合は受付にお声がけください。');
-      document.getElementById('submitBtn').disabled = false;
-    } else if (result.alreadyLinked) {
-      showError('既に登録済みです。\nLINEのメニューから「診察券を表示」をタップしてください。');
-    } else {
-      showError('送信中にエラーが発生しました。もう一度お試しください。');
+    } catch (err) {
+      showLoading(false);
+      showError('エラー: ' + err.message);
       document.getElementById('submitBtn').disabled = false;
     }
-
-  } catch (err) {
-    console.error('送信エラー:', err);
-    showLoading(false);
-    showError('エラー: ' + err.message);
-    document.getElementById('submitBtn').disabled = false;
-  }
 });
 
 // ============================================================
