@@ -418,7 +418,7 @@
 
         <hr class="divider">
 
-        <button type="submit" class="btn-submit" id="submitBtn">
+        <button type="button" class="btn-submit" id="submitBtn" onclick="handleSubmit()">
           登録して診察券を発行する
         </button>
 
@@ -542,8 +542,7 @@ function buildDob() {
 // ============================================================
 // フォーム送信
 // ============================================================
-document.getElementById('registerForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+async function handleSubmit() {
   alert('ボタン押された name=' + document.getElementById('name').value + ' year=' + document.getElementById('dobYear').value);
 
   if (!validateForm()) {
@@ -598,7 +597,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
       alert('sendMessages エラー: ' + err.message + ' code:' + (err.code || 'none'));
       document.getElementById('submitBtn').disabled = false;
     }
-});
+}
 
 // ============================================================
 // 画面切り替え
