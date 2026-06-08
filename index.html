@@ -469,7 +469,7 @@ const LIFF_ID = '2010325180-VDNfq5cR';
 // GAS WebアプリのURL（デプロイ後に設定）
 // ※ LINEへの返信はGAS側で行うため、ここではGASに直接POSTする方法も使えるが
 //    今回はLINE経由（LIFFからliff.sendMessages）でGASに送る設計にする
-const GAS_URL = 'https://line-webhook.n-sakai.workers.dev';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxurmhYfRyrPcOzvIODRwSFyyOM30e-NttYUaPxf1yZK_DGYgetWfJ2LtvZAvT-hS-o/exec';
 
 let liffInitialized = false;
 
@@ -566,26 +566,27 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
 
   try {
     // LINE User IDを取得
-    let accessToken = '';
+    let userId = '';
     if (liffInitialized && liff.isLoggedIn()) {
-      accessToken = liff.getAccessToken();
-      alert('token: ' + (accessToken ? '取得OK length=' + accessToken.length : 'なし'));
+      const profile = await liff.getProfile();
+      userId = profile.userId;
+      alert('userId: ' + (userId ? '取得OK' : 'なし'));
     }
 
-    if (!accessToken) {
+    if (!userId) {
       showLoading(false);
       showError('LINEのログイン情報が取得できませんでした。LINEアプリから開き直してください。');
       document.getElementById('submitBtn').disabled = false;
       return;
     }
 
-    // Cloudflare Workersにアクセストークンと登録データを送信
+    // GASに直接POST
     const res = await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'registerFromLiff',
-        accessToken,
+        userId,
         name,
         birthYear
       })
