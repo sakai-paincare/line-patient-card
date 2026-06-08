@@ -592,6 +592,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     });
 
     const result = await res.json();
+    alert('result: ' + JSON.stringify(result));
     showLoading(false);
 
     if (result.success) {
