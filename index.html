@@ -373,7 +373,7 @@
   <div id="formScreen">
     <div class="description fade-in">
       ご登録いただくと、<strong>LINEで診察券を表示</strong>できるようになります。<br>
-      受診時にカルテに登録されているお名前・生年月日・電話番号をご入力ください。
+      カルテに登録されているカタカナのお名前と生まれた年をご入力ください。
     </div>
 
     <div class="form-card fade-in">
@@ -382,82 +382,38 @@
         <!-- 氏名 -->
         <div class="form-group">
           <label for="name">
-            お名前（漢字フルネーム）
+            お名前（カタカナ・フルネーム）
             <span class="required">*</span>
           </label>
           <input
             type="text"
             id="name"
             name="name"
-            placeholder="例：福岡　太郎"
+            placeholder="例：フクオカ　タロウ"
             autocomplete="name"
             inputmode="text"
             maxlength="50"
           >
-          <div class="field-error" id="nameError">お名前を入力してください</div>
+          <div class="field-error" id="nameError">カタカナでお名前を入力してください</div>
         </div>
 
-        <!-- 生年月日 -->
+        <!-- 生まれた年 -->
         <div class="form-group">
-          <label>
-            生年月日
+          <label for="dobYear">
+            生まれた年
             <span class="required">*</span>
           </label>
-          <div class="dob-row">
-            <div>
-              <input
-                type="number"
-                id="dobYear"
-                placeholder="1980"
-                min="1900"
-                max="2025"
-                maxlength="4"
-                inputmode="numeric"
-              >
-              <div class="dob-label">年</div>
-            </div>
-            <div>
-              <input
-                type="number"
-                id="dobMonth"
-                placeholder="4"
-                min="1"
-                max="12"
-                inputmode="numeric"
-              >
-              <div class="dob-label">月</div>
-            </div>
-            <div>
-              <input
-                type="number"
-                id="dobDay"
-                placeholder="15"
-                min="1"
-                max="31"
-                inputmode="numeric"
-              >
-              <div class="dob-label">日</div>
-            </div>
-          </div>
-          <div class="field-error" id="dobError">正しい生年月日を入力してください</div>
-        </div>
-
-        <!-- 電話番号 -->
-        <div class="form-group">
-          <label for="phone">
-            電話番号
-            <span class="optional">（任意・照合精度向上のため）</span>
-          </label>
           <input
-            type="tel"
-            id="phone"
-            name="phone"
-            placeholder="例：090-1234-5678"
-            autocomplete="tel"
-            inputmode="tel"
-            maxlength="15"
+            type="number"
+            id="dobYear"
+            placeholder="例：1980"
+            min="1900"
+            max="2025"
+            maxlength="4"
+            inputmode="numeric"
+            style="max-width: 160px;"
           >
-          <div class="field-error" id="phoneError">正しい電話番号を入力してください</div>
+          <div class="field-error" id="dobError">正しい生まれた年を入力してください（例：1980）</div>
         </div>
 
         <hr class="divider">
@@ -494,8 +450,7 @@
     <div class="error-icon">⚠️</div>
     <div class="error-title">情報が見つかりませんでした</div>
     <div class="error-msg" id="errorMsg">
-      入力内容とカルテの情報が一致しませんでした。<br>
-      お名前（漢字）・生年月日をご確認の上、再度お試しください。<br><br>
+      カタカナのお名前・生まれた年をご確認の上、再度お試しください。<br><br>
       解決しない場合は受付スタッフにお声がけください。
     </div>
     <button class="btn-retry" onclick="resetForm()">もう一度試す</button>
@@ -538,11 +493,12 @@ liff.init({ liffId: LIFF_ID })
 function validateForm() {
   let valid = true;
 
-  // 氏名
+  // カタカナ氏名
   const name = document.getElementById('name').value.trim();
   const nameError = document.getElementById('nameError');
   const nameInput = document.getElementById('name');
-  if (!name) {
+  const katakanaRegex = /^[ァ-ヶー\s　]+$/;
+  if (!name || !katakanaRegex.test(name)) {
     nameInput.classList.add('error');
     nameError.classList.add('show');
     valid = false;
@@ -551,15 +507,10 @@ function validateForm() {
     nameError.classList.remove('show');
   }
 
-  // 生年月日
-  const year  = parseInt(document.getElementById('dobYear').value);
-  const month = parseInt(document.getElementById('dobMonth').value);
-  const day   = parseInt(document.getElementById('dobDay').value);
+  // 生まれた年
+  const year = parseInt(document.getElementById('dobYear').value);
   const dobError = document.getElementById('dobError');
-  const dobValid = year >= 1900 && year <= 2025 &&
-                   month >= 1 && month <= 12 &&
-                   day >= 1 && day <= 31;
-  if (!dobValid) {
+  if (!year || year < 1900 || year > 2025) {
     document.getElementById('dobYear').classList.add('error');
     dobError.classList.add('show');
     valid = false;
@@ -588,15 +539,14 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
   if (!validateForm()) return;
 
   const name  = document.getElementById('name').value.trim();
-  const dob   = buildDob();
-  const phone = document.getElementById('phone').value.trim();
+  const birthYear = document.getElementById('dobYear').value;
 
-  // 送信データ（GASのprocessRegistrationが受け取るJSON）
+  // 送信データ
   const payload = JSON.stringify({
     action: 'register',
     name,
-    dob,
-    phone
+    birthYear,
+    dob: birthYear  // GAS側の互換性のため
   });
 
   showLoading(true);
@@ -663,30 +613,11 @@ function resetForm() {
   document.getElementById('submitBtn').disabled = false;
 }
 
-// ============================================================
-// 電話番号の自動フォーマット（ハイフン挿入）
-// ============================================================
-document.getElementById('phone').addEventListener('input', (e) => {
-  let val = e.target.value.replace(/[^0-9]/g, '');
-  if (val.length > 3 && val.length <= 7) {
-    val = val.slice(0,3) + '-' + val.slice(3);
-  } else if (val.length > 7) {
-    val = val.slice(0,3) + '-' + val.slice(3,7) + '-' + val.slice(7,11);
-  }
-  e.target.value = val;
-});
-
-// 年入力：4桁で月に自動フォーカス
+// 年入力：4桁で自動的に次へ（フォーカス移動なし・年のみなので不要）
 document.getElementById('dobYear').addEventListener('input', (e) => {
+  // 4桁入力されたら送信ボタンにフォーカス
   if (e.target.value.length === 4) {
-    document.getElementById('dobMonth').focus();
-  }
-});
-
-// 月入力：2桁 or Enterで日に自動フォーカス
-document.getElementById('dobMonth').addEventListener('input', (e) => {
-  if (e.target.value.length === 2) {
-    document.getElementById('dobDay').focus();
+    document.getElementById('submitBtn').focus();
   }
 });
 </script>
