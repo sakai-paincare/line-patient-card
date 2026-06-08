@@ -545,6 +545,9 @@ function buildDob() {
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
+  // デバッグ
+  alert('liffInitialized=' + liffInitialized + ' isLoggedIn=' + (liffInitialized ? liff.isLoggedIn() : 'N/A'));
+
   if (!validateForm()) return;
 
   const name  = document.getElementById('name').value.trim();
