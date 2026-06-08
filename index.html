@@ -544,11 +544,13 @@ function buildDob() {
 // ============================================================
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
   e.preventDefault();
+  alert('ボタン押された name=' + document.getElementById('name').value + ' year=' + document.getElementById('dobYear').value);
 
-  // デバッグ
-  alert('liffInitialized=' + liffInitialized + ' isLoggedIn=' + (liffInitialized ? liff.isLoggedIn() : 'N/A'));
-
-  if (!validateForm()) return;
+  if (!validateForm()) {
+    alert('バリデーション失敗');
+    return;
+  }
+  alert('バリデーションOK');
 
   const name  = document.getElementById('name').value.trim();
   const birthYear = document.getElementById('dobYear').value;
